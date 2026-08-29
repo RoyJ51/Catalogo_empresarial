@@ -1,0 +1,371 @@
+{% load static l10n %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Catálogo - {% if empresa %}{{ empresa.nombre }}{% else %}Catálogo de Productos{% endif %}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 16mm 12mm 16mm 12mm;
+            background-color: #f8fafc;
+            @bottom-left {
+                content: "© {% if empresa %}{{ empresa.nombre }}{% else %}Catálogo de Productos{% endif %} — Uso Informativo";
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 8pt;
+                color: #64748b;
+            }
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 8pt;
+                color: #64748b;
+            }
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+            font-size: 10pt;
+            line-height: 1.4;
+        }
+
+        /* ENCABEZADO Y BANNER */
+        .header-banner {
+            background-color: #0f172a;
+            color: #ffffff;
+            padding: 16pt 18pt;
+            border-radius: 8pt;
+            margin-bottom: 14pt;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td { vertical-align: middle; }
+
+        .brand-logo {
+            max-height: 45pt;
+            max-width: 120pt;
+            background-color: #ffffff;
+            padding: 4pt;
+            border-radius: 4pt;
+            object-fit: contain;
+        }
+
+        .brand-title {
+            font-size: 18pt;
+            font-weight: bold;
+            letter-spacing: -0.5pt;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.1;
+        }
+
+        .brand-subtitle {
+            font-size: 8.5pt;
+            color: #38bdf8;
+            margin-top: 3pt;
+            text-transform: uppercase;
+            letter-spacing: 1pt;
+            font-weight: 600;
+        }
+
+        .contact-info {
+            text-align: right;
+            font-size: 8.5pt;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+
+        /* METADATOS */
+        .catalog-meta {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6pt;
+            padding: 8pt 12pt;
+            margin-bottom: 16pt;
+        }
+
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+        }
+
+        .meta-badge {
+            display: inline-block;
+            background-color: #e0f2fe;
+            color: #0369a1;
+            font-weight: bold;
+            padding: 2pt 7pt;
+            border-radius: 12pt;
+            font-size: 8pt;
+        }
+
+        /* CATEGORÍAS */
+        .category-header {
+            border-left: 4pt solid #0284c7;
+            background-color: #ffffff;
+            border-radius: 0 6pt 6pt 0;
+            padding: 6pt 10pt;
+            margin-top: 14pt;
+            margin-bottom: 10pt;
+            page-break-after: avoid;
+            break-after: avoid;
+            border: 1px solid #e2e8f0;
+            border-left: 4pt solid #0284c7;
+        }
+
+        .category-title {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        /* GRID RÁPIDO PARA WEASYPRINT */
+        .products-container {
+            width: 100%;
+            margin-bottom: 12pt;
+            font-size: 0;
+        }
+
+        .product-card {
+            display: inline-block;
+            width: 49%;
+            vertical-align: top;
+            margin-right: 2%;
+            margin-bottom: 10pt;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8pt;
+            padding: 8pt;
+            font-size: 10pt;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .product-card:nth-child(2n) {
+            margin-right: 0;
+        }
+
+        .product-card-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .product-img-box {
+            width: 65pt;
+            height: 65pt;
+            background-color: #f8fafc;
+            border-radius: 6pt;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #f1f5f9;
+        }
+
+        .product-img-box img {
+            max-width: 60pt;
+            max-height: 60pt;
+            display: block;
+            margin: 0 auto;
+            object-fit: contain;
+        }
+
+        .no-img-placeholder {
+            color: #94a3b8;
+            font-size: 7.5pt;
+        }
+
+        .product-details {
+            padding-left: 8pt;
+            vertical-align: top;
+        }
+
+        .product-badge {
+            display: inline-block;
+            background-color: #f1f5f9;
+            color: #0284c7;
+            font-size: 6.5pt;
+            font-weight: 700;
+            padding: 1pt 4pt;
+            border-radius: 3pt;
+            margin-bottom: 2pt;
+            text-transform: uppercase;
+        }
+
+        .product-name {
+            font-size: 9pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin: 0 0 2pt 0;
+            line-height: 1.2;
+        }
+
+        .product-desc {
+            font-size: 7pt;
+            color: #64748b;
+            margin: 0 0 4pt 0;
+            line-height: 1.2;
+        }
+
+        .price-stock-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .price-val {
+            font-size: 10pt;
+            font-weight: 800;
+            color: #16a34a;
+        }
+
+        .stock-tag {
+            text-align: right;
+            font-size: 7pt;
+            font-weight: 600;
+            color: #0284c7;
+        }
+
+        .stock-out { color: #dc2626; }
+
+        /* FOOTER NOTE */
+        .catalog-footer-note {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 6pt;
+            padding: 8pt 12pt;
+            margin-top: 14pt;
+            font-size: 8pt;
+            color: #166534;
+            text-align: center;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ENCABEZADO -->
+    <div class="header-banner">
+        <table class="header-table">
+            <tr>
+                <td>
+                    <table style="border-collapse: collapse;">
+                        <tr>
+                            {% if empresa and empresa.logo %}
+                            <td style="padding-right: 10pt;">
+                                <img src="{{ empresa.logo.url }}" class="brand-logo" alt="Logo">
+                            </td>
+                            {% endif %}
+                            <td style="vertical-align: middle;">
+                                <h1 class="brand-title">{% if empresa %}{{ empresa.nombre }}{% else %}Catálogo Digital{% endif %}</h1>
+                                <div class="brand-subtitle">Catálogo Oficial de Productos</div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td class="contact-info">
+                    {% if empresa %}
+                        {% if empresa.telefono %}<strong>Teléfono / WhatsApp:</strong> {{ empresa.telefono }}<br>{% endif %}
+                        {% if empresa.email %}<strong>Correo:</strong> {{ empresa.email }}<br>{% endif %}
+                        {% if empresa.direccion %}<strong>Dirección:</strong> {{ empresa.direccion }}{% endif %}
+                    {% else %}
+                        <strong>Contacto:</strong> +51 987 654 321<br>
+                        <strong>Email:</strong> contacto@empresa.com
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- METADATOS -->
+    <div class="catalog-meta">
+        <table class="meta-table">
+            <tr>
+                <td><strong>Fecha de Generación:</strong> {% now "d/m/Y" %}</td>
+                <td style="text-align: center;">
+                    <strong>Precios:</strong> 
+                    <span class="meta-badge">
+                        {% if con_precio %}Soles{% else %}Sin Precios Mostrar{% endif %}
+                    </span>
+                </td>
+                <td style="text-align: right;"><strong>Documento:</strong> Catálogo Informativo</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- PRODUCTOS POR CATEGORÍA -->
+    {% regroup productos by categoria as categoria_list %}
+
+    {% for cat in categoria_list %}
+        <div class="category-header">
+            <h2 class="category-title">{% if cat.grouper %}{{ cat.grouper.nombre }}{% else %}Sin Categoría{% endif %}</h2>
+        </div>
+
+        <div class="products-container">
+            {% for producto in cat.list %}
+                <div class="product-card">
+                    <table class="product-card-table">
+                        <tr>
+                            <td class="product-img-box">
+                                {% if producto.imagen %}
+                                    <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
+                                {% else %}
+                                    <span class="no-img-placeholder">Sin Imagen</span>
+                                {% endif %}
+                            </td>
+                            <td class="product-details">
+                                <span class="product-badge">{% if producto.categoria %}{{ producto.categoria.nombre }}{% else %}General{% endif %}</span>
+                                <h3 class="product-name">{{ producto.nombre }}</h3>
+                                <p class="product-desc">{{ producto.descripcion|truncatewords:10 }}</p>
+                                
+                                <table class="price-stock-table">
+                                    <tr>
+                                        {% if con_precio %}
+                                            <td class="price-val">S/. {{ producto.precio|stringformat:".2f" }}</td>
+                                        {% else %}
+                                            <td class="price-val" style="font-size:7.5pt; color:#64748b;">Consulte precio</td>
+                                        {% endif %}
+
+                                        <td class="stock-tag {% if producto.stock <= 0 %}stock-out{% endif %}">
+                                            {% if producto.stock > 0 %}
+                                                Stock: {{ producto.stock }} und.
+                                            {% else %}
+                                                Agotado
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            {% empty %}
+                <p style="color:#94a3b8; padding:10pt; font-size:9pt;">No hay productos registrados en esta categoría.</p>
+            {% endfor %}
+        </div>
+    {% empty %}
+        <div style="text-align:center; padding:30pt; color:#64748b;">
+            <h3>No se encontraron productos en el catálogo</h3>
+        </div>
+    {% endfor %}
+
+    <!-- PIE DE PÁGINA -->
+    <div class="catalog-footer-note">
+        💬 <strong>¿Deseas solicitar información o realizar un pedido?</strong><br>
+        Contáctanos directamente enviándonos un mensaje con los nombres de los productos requeridos.
+    </div>
+
+</body>
+</html>

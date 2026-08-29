@@ -1,0 +1,53 @@
+{# Hereda de la vista base de listados del panel de administración #}
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+<style>
+    /* Oculta visualmente el menú desplegable predeterminado y la barra de acciones de Django */
+    .actions, select[name="action"], button[name="index"], .action-counter {
+        display: none !important;
+    }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Busca el botón nativo de agregar registros ("+ Añadir categoría") en la barra superior
+    var addBtn = document.querySelector('a[href*="/add/"]');
+    
+    if (addBtn) {
+        // Crea un botón rojo con estilos de Bootstrap para la eliminación de categorías
+        var btnEliminar = document.createElement('button');
+        btnEliminar.type = 'button';
+        btnEliminar.className = 'btn btn-danger ms-2 font-weight-bold';
+        btnEliminar.innerHTML = '<i class="fas fa-trash-alt me-1"></i> Eliminar categoría';
+        
+        // Configura la acción interactiva al hacer clic en el botón
+        btnEliminar.onclick = function() {
+            // Revisa qué filas/casillas de categorías han sido marcadas en la tabla
+            var checkboxes = document.querySelectorAll('input[name="_selected_action"]:checked');
+            
+            // Si el usuario no seleccionó ninguna categoría, lanza una alerta y cancela
+            if (checkboxes.length === 0) {
+                alert('Por favor, marca primero la casilla de la categoría que deseas eliminar.');
+                return;
+            }
+            
+            // Activa la orden de eliminación nativa ('delete_selected') y envía el formulario de fondo
+            var selectAction = document.querySelector('select[name="action"]');
+            var form = document.getElementById('changelist-form');
+            
+            if (selectAction && form) {
+                selectAction.value = 'delete_selected';
+                form.submit();
+            }
+        };
+        
+        // Coloca el botón de eliminar exactamente al lado del botón "+ Añadir categoría"
+        addBtn.parentNode.insertBefore(btnEliminar, addBtn.nextSibling);
+    }
+});
+</script>
+
+{# Conserva y renderiza el resto del contenido y la tabla nativa de Django #}
+{{ block.super }}
+{% endblock %}

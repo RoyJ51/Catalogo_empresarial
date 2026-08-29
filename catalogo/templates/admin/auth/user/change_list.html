@@ -1,0 +1,54 @@
+{# Hereda de la plantilla original de lista de registros del Admin de Django #}
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+<style>
+    /* Oculta por completo la barra predeterminada de acciones de Django (el desplegable '---' y el botón 'Ir') */
+    .actions, select[name="action"], button[name="index"], .action-counter {
+        display: none !important;
+    }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Busca en la pantalla el botón nativo para agregar un nuevo registro (ej: "+ Añadir usuario")
+    var addBtn = document.querySelector('a[href*="/add/"]');
+    
+    if (addBtn) {
+        // Crea un nuevo botón estético de color rojo usando clases de Bootstrap
+        var btnEliminar = document.createElement('button');
+        btnEliminar.type = 'button';
+        btnEliminar.className = 'btn btn-danger ms-2 font-weight-bold';
+        btnEliminar.innerHTML = '<i class="fas fa-trash-alt me-1"></i> Eliminar usuario';
+        
+        // Define el comportamiento interactivo al hacer clic en el nuevo botón
+        btnEliminar.onclick = function() {
+            // Revisa cuáles casillas de la tabla están marcadas
+            var checkboxes = document.querySelectorAll('input[name="_selected_action"]:checked');
+            
+            // Si el usuario no seleccionó ningún elemento, muestra una alerta y detiene la ejecución
+            if (checkboxes.length === 0) {
+                alert('Por favor, marca primero la casilla del usuario que deseas eliminar.');
+                return;
+            }
+            
+            // Localiza el formulario oculto y el campo de selección de acciones
+            var selectAction = document.querySelector('select[name="action"]');
+            var form = document.getElementById('changelist-form');
+            
+            // Asigna la acción de borrado nativa 'delete_selected' y envía el formulario automáticamente
+            if (selectAction && form) {
+                selectAction.value = 'delete_selected';
+                form.submit();
+            }
+        };
+        
+        // Inserta el botón rojo de eliminación inmediatamente después del botón de añadir
+        addBtn.parentNode.insertBefore(btnEliminar, addBtn.nextSibling);
+    }
+});
+</script>
+
+{# Renderiza la estructura predeterminada del Admin sobre la cual aplicamos los cambios #}
+{{ block.super }}
+{% endblock %}

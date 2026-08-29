@@ -1,0 +1,53 @@
+{# Hereda la plantilla base de listados del panel de administración #}
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+<style>
+    /* Oculta completamente el menú desplegable predeterminado y la barra de acciones de Django */
+    .actions, select[name="action"], button[name="index"], .action-counter {
+        display: none !important;
+    }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Busca el botón principal para agregar registros ("+ Añadir") en la cabecera
+    var addBtn = document.querySelector('a[href*="/add/"]');
+    
+    if (addBtn) {
+        // Crea el nuevo botón rojo con estilos de Bootstrap para eliminar la configuración
+        var btnEliminar = document.createElement('button');
+        btnEliminar.type = 'button';
+        btnEliminar.className = 'btn btn-danger ms-2 font-weight-bold';
+        btnEliminar.innerHTML = '<i class="fas fa-trash-alt me-1"></i> Eliminar configuración';
+        
+        // Define la lógica al hacer clic en el botón de eliminar
+        btnEliminar.onclick = function() {
+            // Obtiene las casillas que el usuario seleccionó en la tabla
+            var checkboxes = document.querySelectorAll('input[name="_selected_action"]:checked');
+            
+            // Si no se seleccionó ninguna casilla, muestra una alerta y detiene el proceso
+            if (checkboxes.length === 0) {
+                alert('Por favor, marca primero la casilla del registro que deseas eliminar.');
+                return;
+            }
+            
+            // Selecciona el formulario oculto y asigna la orden nativa de borrado ('delete_selected')
+            var selectAction = document.querySelector('select[name="action"]');
+            var form = document.getElementById('changelist-form');
+            
+            if (selectAction && form) {
+                selectAction.value = 'delete_selected';
+                form.submit();
+            }
+        };
+        
+        // Inserta el botón rojo a la derecha del botón "+ Añadir"
+        addBtn.parentNode.insertBefore(btnEliminar, addBtn.nextSibling);
+    }
+});
+</script>
+
+{# Mantiene y renderiza el contenido nativo de la tabla de administración #}
+{{ block.super }}
+{% endblock %}
